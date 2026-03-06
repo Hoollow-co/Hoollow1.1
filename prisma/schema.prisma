@@ -1,0 +1,333 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  
+  // Custom Hoollow fields
+  role          String    @default("builder") // builder, founder, investor
+  impactXP      Int       @default(50) // Starting XP
+  bio           String?   @db.Text
+  skills        Json      @default("[]")
+  openToCollab  Boolean   @default(true)
+  
+  // Relations
+  posts         Post[]
+  projects      Project[]
+  comments      Comment[]
+  upvotes       Upvote[]
+  clubMembers   ClubMember[]
+  clubMessages  ClubMessage[]
+  subscriptions Subscription[]
+  collabsSent     CollabRequest[] @relation("collabFrom")
+  collabsReceived CollabRequest[] @relation("collabTo")
+  
+  // DM relations
+  msgRequestsSent     MessageRequest[] @relation("msgReqFrom")
+  msgRequestsReceived MessageRequest[] @relation("msgReqTo")
+  dmSent              DirectMessage[]  @relation("dmFrom")
+  dmReceived          DirectMessage[]  @relation("dmTo")
+  
+  // Club invitations
+  clubInvitesSent     ClubInvitation[] @relation("inviteFrom")
+  clubInvitesReceived ClubInvitation[] @relation("inviteTo")
+  
+  // Notifications
+  notifications       Notification[]
+  
+  accounts      Account[]
+  sessions      Session[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  body        String    @db.Text
+  tags        Json      @default("[]")
+  isProject   Boolean   @default(false)
+  imageUrl    String?   @db.Text
+  openToCollab Boolean  @default(false)
+  
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  comments    Comment[]
+  upvotes     Upvote[]
+  collabRequests CollabRequest[] @relation("collabPost")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId])
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @db.Text
+  tags        Json      @default("[]")
+  xpThreshold Int       @default(0)
+  thumbnail   String?
+  imageUrl    String?   @db.Text
+  githubUrl   String?
+  upvotes     Int       @default(0)
+  openToCollab Boolean  @default(false)
+  expiresAt   DateTime? // For the 48-hour launchpad
+
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  collabRequests CollabRequest[] @relation("collabProject")
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String   @db.Text
+  
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Upvote {
+  id        String   @id @default(cuid())
+  
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Club {
+  id          String       @id @default(cuid())
+  name        String
+  description String       @db.Text
+  type        String       @default("open") // open, invite, application
+  domain      String       @default("Tech")
+  gradient    String       @default("linear-gradient(135deg, #667eea 0%, #764ba2 100%)")
+  tags        Json         @default("[]")
+  creatorId   String?      // Track the original creator
+  
+  members      ClubMember[]
+  messages     ClubMessage[]
+  invitations  ClubInvitation[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model ClubMember {
+  id       String @id @default(cuid())
+  role     String @default("member") // owner, coowner, manager, member
+  
+  clubId   String
+  club     Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  joinedAt DateTime @default(now())
+
+  @@unique([clubId, userId])
+  @@index([clubId])
+  @@index([userId])
+}
+
+model ClubMessage {
+  id        String   @id @default(cuid())
+  text      String   @db.Text
+  
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([clubId])
+  @@index([authorId])
+}
+
+model CollabRequest {
+  id        String   @id @default(cuid())
+  message   String?  @db.Text
+  status    String   @default("pending") // pending, accepted, rejected
+  
+  postId    String?
+  post      Post?    @relation("collabPost", fields: [postId], references: [id], onDelete: Cascade)
+  
+  projectId String?
+  project   Project? @relation("collabProject", fields: [projectId], references: [id], onDelete: Cascade)
+  
+  fromUserId String
+  fromUser   User    @relation("collabFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  
+  toUserId   String
+  toUser     User    @relation("collabTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([postId])
+  @@index([projectId])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+model Subscription {
+  id                  String   @id @default(cuid())
+  plan                String   @default("super") // super
+  status              String   @default("active") // active, expired, cancelled
+  razorpayOrderId     String?
+  razorpayPaymentId   String?
+  razorpaySignature   String?
+  amount              Int      @default(29900) // in paise (₹299)
+  
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt           DateTime @default(now())
+  expiresAt           DateTime
+
+  @@index([userId])
+}
+
+model MessageRequest {
+  id         String   @id @default(cuid())
+  status     String   @default("pending") // pending, accepted, rejected
+  
+  fromUserId String
+  fromUser   User     @relation("msgReqFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  
+  toUserId   String
+  toUser     User     @relation("msgReqTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([fromUserId, toUserId])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+model DirectMessage {
+  id         String   @id @default(cuid())
+  text       String   @db.Text
+  
+  fromUserId String
+  fromUser   User     @relation("dmFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  
+  toUserId   String
+  toUser     User     @relation("dmTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@index([fromUserId, toUserId])
+  @@index([toUserId, fromUserId])
+}
+
+model ClubInvitation {
+  id         String   @id @default(cuid())
+  status     String   @default("pending") // pending, accepted, rejected
+  
+  clubId     String
+  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  
+  fromUserId String
+  fromUser   User     @relation("inviteFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  
+  toUserId   String
+  toUser     User     @relation("inviteTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([clubId, toUserId])
+  @@index([clubId])
+  @@index([fromUserId])
+  @@index([toUserId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  type       String   // upvote, comment, club_invite, collab_request, message_request, dm
+  message    String   @db.Text
+  read       Boolean  @default(false)
+  relatedId  String?  // ID of the related entity (post, club, etc.)
+  
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
