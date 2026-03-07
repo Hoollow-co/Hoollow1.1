@@ -108,14 +108,6 @@ export default function OnboardingPage() {
         if (status === "loading") return;
 
         if (status === "authenticated" && session?.user) {
-            // If user has a role set (meaning they completed onboarding), go to feed
-            const userRole = session.user.role;
-            if (userRole && userRole !== "builder") {
-                // "builder" is the default, so if they have a custom role they've onboarded
-                router.replace("/feed");
-                return;
-            }
-
             // Check the DB to see if they've completed their profile
             fetch("/api/profile")
                 .then((res) => res.json())
@@ -131,6 +123,8 @@ export default function OnboardingPage() {
                     }
                 })
                 .catch(() => {
+                    // On error, let them proceed with onboarding
+                    setDisplayName(session.user?.name || "");
                     setStep(2);
                     setChecking(false);
                 });

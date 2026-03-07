@@ -56,6 +56,7 @@ export default function MessagesPage() {
     const [userSearchQuery, setUserSearchQuery] = useState("");
     const [userSearchResults, setUserSearchResults] = useState<SearchUser[]>([]);
     const [sendingRequest, setSendingRequest] = useState(false);
+    const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
     const fetchConversations = useCallback(async () => {
         try {
@@ -63,6 +64,13 @@ export default function MessagesPage() {
             if (res.ok) setConversations(await res.json());
         } catch (e) { console.error(e); }
         finally { setLoading(false); }
+    }, []);
+
+    const fetchPendingRequests = useCallback(async () => {
+        try {
+            const res = await fetch("/api/dm/requests");
+            if (res.ok) setPendingRequests(await res.json());
+        } catch (e) { console.error(e); }
     }, []);
 
     const fetchMessages = useCallback(async (userId: string) => {
@@ -74,7 +82,8 @@ export default function MessagesPage() {
 
     useEffect(() => {
         fetchConversations();
-    }, [fetchConversations]);
+        fetchPendingRequests();
+    }, [fetchConversations, fetchPendingRequests]);
 
     useEffect(() => {
         if (activeChat) {
@@ -113,20 +122,25 @@ export default function MessagesPage() {
     };
 
     const handleAcceptRequest = async (requestId: string) => {
+        setProcessingRequestId(requestId);
         try {
             await fetch("/api/dm", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ requestId, status: "accepted" }),
             });
-            showToast("success", "Message request accepted");
+            showToast("success", "Message request accepted!");
             fetchConversations();
+            fetchPendingRequests();
         } catch (e) {
             showToast("error", "Failed to accept request");
+        } finally {
+            setProcessingRequestId(null);
         }
     };
 
     const handleRejectRequest = async (requestId: string) => {
+        setProcessingRequestId(requestId);
         try {
             await fetch("/api/dm", {
                 method: "PATCH",
@@ -134,9 +148,11 @@ export default function MessagesPage() {
                 body: JSON.stringify({ requestId, status: "rejected" }),
             });
             showToast("info", "Message request declined");
-            fetchConversations();
+            fetchPendingRequests();
         } catch (e) {
             showToast("error", "Failed to decline request");
+        } finally {
+            setProcessingRequestId(null);
         }
     };
 
@@ -235,6 +251,46 @@ export default function MessagesPage() {
                                         />
                                     </div>
                                 </div>
+
+                                {/* Pending DM Requests */}
+                                {pendingRequests.length > 0 && (
+                                    <div className="border-b border-border">
+                                        <div className="px-4 py-2 flex items-center gap-2">
+                                            <UserPlus size={14} className="text-orange-500" />
+                                            <span className="text-label font-semibold text-text-primary uppercase tracking-wider">Requests</span>
+                                            <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-pill">
+                                                {pendingRequests.length}
+                                            </span>
+                                        </div>
+                                        {pendingRequests.map((req) => (
+                                            <div key={req.id} className="px-4 py-3 border-t border-border/50 bg-orange-50/30">
+                                                <div className="flex items-center gap-2.5">
+                                                    <Avatar name={req.fromUser.name} image={req.fromUser.image} size="sm" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-small font-medium text-text-primary truncate">{req.fromUser.name}</p>
+                                                        <p className="text-label text-text-muted">wants to message you</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-2 ml-9">
+                                                    <button
+                                                        onClick={() => handleAcceptRequest(req.id)}
+                                                        disabled={processingRequestId === req.id}
+                                                        className="flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 rounded-btn text-label font-semibold hover:bg-green-200 transition-colors disabled:opacity-50"
+                                                    >
+                                                        <Check size={12} /> Accept
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRejectRequest(req.id)}
+                                                        disabled={processingRequestId === req.id}
+                                                        className="flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-500 rounded-btn text-label font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
+                                                    >
+                                                        <X size={12} /> Decline
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {/* Conversation List */}
                                 <div className="flex-1 overflow-y-auto">

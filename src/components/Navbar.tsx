@@ -14,6 +14,7 @@ const navLinks = [
     { href: "/feed", label: "Feed" },
     { href: "/launchpad", label: "Launchpad" },
     { href: "/clubs", label: "Clubs" },
+    { href: "/collab", label: "Collab" },
     { href: "/super", label: "Super", premium: true },
 ];
 

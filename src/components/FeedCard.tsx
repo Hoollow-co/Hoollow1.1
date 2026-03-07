@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     MessageCircle,
@@ -43,6 +44,7 @@ interface PostData {
     commentCount: number;
     isProject?: boolean;
     hasUpvoted?: boolean;
+    isSaved?: boolean;
     imageUrl?: string | null;
     openToCollab?: boolean;
 }
@@ -71,7 +73,8 @@ export default function FeedCard({ post, onUpvote, onPostUpdated, className = ""
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showCollabModal, setShowCollabModal] = useState(false);
-    const [bookmarked, setBookmarked] = useState(false);
+    const [bookmarked, setBookmarked] = useState(post.isSaved || false);
+    const [savingBookmark, setSavingBookmark] = useState(false);
     const [shared, setShared] = useState(false);
     const [collabMessage, setCollabMessage] = useState("");
     const [collabSent, setCollabSent] = useState(false);
@@ -179,9 +182,26 @@ export default function FeedCard({ post, onUpvote, onPostUpdated, className = ""
     };
 
     const handleShare = () => {
-        navigator.clipboard.writeText(`${window.location.origin}/feed#${post.id}`);
+        navigator.clipboard.writeText(`${window.location.origin}/feed/${post.id}`);
         setShared(true);
         setTimeout(() => setShared(false), 2000);
+    };
+
+    const handleBookmark = async () => {
+        if (savingBookmark) return;
+        setSavingBookmark(true);
+        const prev = bookmarked;
+        setBookmarked(!bookmarked); // optimistic
+        try {
+            const res = await fetch(`/api/posts/${post.id}/save`, { method: "POST" });
+            if (!res.ok) {
+                setBookmarked(prev); // revert
+            }
+        } catch {
+            setBookmarked(prev); // revert
+        } finally {
+            setSavingBookmark(false);
+        }
     };
 
     return (
@@ -235,7 +255,9 @@ export default function FeedCard({ post, onUpvote, onPostUpdated, className = ""
                     )}
                 </div>
 
-                <h3 className="text-card-title font-semibold text-text-primary mb-2">{post.title}</h3>
+                <Link href={`/feed/${post.id}`} className="block hover:underline decoration-accent/30 underline-offset-2">
+                    <h3 className="text-card-title font-semibold text-text-primary mb-2">{post.title}</h3>
+                </Link>
                 <p className="text-body text-text-secondary mb-4 whitespace-pre-wrap">{post.body}</p>
 
                 {/* Image */}
@@ -278,7 +300,7 @@ export default function FeedCard({ post, onUpvote, onPostUpdated, className = ""
                         <motion.button whileTap={{ scale: 0.9 }} onClick={handleShare} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-btn text-text-muted hover:text-text-secondary hover:bg-surface-alt transition-colors">
                             {shared ? <Check size={16} className="text-success" /> : <Share2 size={16} />}
                         </motion.button>
-                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setBookmarked(!bookmarked)} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-btn transition-colors ${bookmarked ? "text-premium bg-premium-soft" : "text-text-muted hover:text-text-secondary hover:bg-surface-alt"}`}>
+                        <motion.button whileTap={{ scale: 0.9 }} onClick={handleBookmark} disabled={savingBookmark} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-btn transition-colors ${bookmarked ? "text-premium bg-premium-soft" : "text-text-muted hover:text-text-secondary hover:bg-surface-alt"}`}>
                             <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
                         </motion.button>
                     </div>

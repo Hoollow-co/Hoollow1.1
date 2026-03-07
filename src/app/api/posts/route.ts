@@ -8,7 +8,7 @@ export async function GET() {
         const session = await getServerSession(authOptions);
         const userId = session?.user?.id;
 
-        const posts = await prisma.post.findMany({
+        const posts = await (prisma as any).post.findMany({
             orderBy: { createdAt: "desc" },
             include: {
                 author: {
@@ -16,10 +16,11 @@ export async function GET() {
                 },
                 _count: { select: { upvotes: true, comments: true } },
                 upvotes: userId ? { where: { userId }, select: { id: true } } : false,
+                savedPosts: userId ? { where: { userId }, select: { id: true } } : false,
             },
         });
 
-        const formatted = posts.map((post) => ({
+        const formatted = posts.map((post: any) => ({
             id: post.id,
             title: post.title,
             body: post.body,
@@ -32,6 +33,7 @@ export async function GET() {
             upvotes: post._count.upvotes,
             commentCount: post._count.comments,
             hasUpvoted: userId ? post.upvotes.length > 0 : false,
+            isSaved: userId ? (post as any).savedPosts?.length > 0 : false,
             createdAt: post.createdAt.toISOString(),
         }));
 

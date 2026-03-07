@@ -13,5 +13,8 @@ export const config = {
         "/clubs/:path*",
         "/super/:path*",
         "/profile/:path*",
+        "/collab/:path*",
+        "/saved/:path*",
+        "/messages/:path*",
     ],
 };

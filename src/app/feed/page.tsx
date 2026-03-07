@@ -16,6 +16,7 @@ import {
     Plus,
     X,
     Github,
+    Bookmark,
     Image as ImageIcon,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -153,6 +154,8 @@ export default function FeedPage() {
         { icon: <Home size={18} />, label: "Feed", href: "/feed", active: true },
         { icon: <Rocket size={18} />, label: "Launchpad", href: "/launchpad" },
         { icon: <Users size={18} />, label: "Clubs", href: "/clubs" },
+        { icon: <Users size={18} />, label: "Collab", href: "/collab" },
+        { icon: <Bookmark size={18} />, label: "Saved", href: "/saved" },
         { icon: <Briefcase size={18} />, label: "Notifications", href: "/notifications" },
         { icon: <User size={18} />, label: "Profile", href: `/profile/${profileSlug}` },
     ];
