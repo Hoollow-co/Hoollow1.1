@@ -12,7 +12,7 @@ export async function GET() {
             orderBy: { createdAt: "desc" },
             include: {
                 author: {
-                    select: { id: true, name: true, image: true, role: true, impactXP: true },
+                    select: { id: true, name: true, username: true, image: true, role: true, impactXP: true },
                 },
                 _count: { select: { upvotes: true, comments: true } },
                 upvotes: userId ? { where: { userId }, select: { id: true } } : false,
@@ -72,11 +72,6 @@ export async function POST(req: Request) {
                     select: { id: true, name: true, image: true, role: true, impactXP: true },
                 },
             },
-        });
-
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { impactXP: { increment: 5 } },
         });
 
         return NextResponse.json(post, { status: 201 });

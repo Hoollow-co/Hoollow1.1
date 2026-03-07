@@ -18,8 +18,8 @@ export async function GET() {
                 OR: [{ fromUserId: userId }, { toUserId: userId }],
             },
             include: {
-                fromUser: { select: { id: true, name: true, image: true, role: true } },
-                toUser: { select: { id: true, name: true, image: true, role: true } },
+                fromUser: { select: { id: true, name: true, username: true, image: true, role: true } },
+                toUser: { select: { id: true, name: true, username: true, image: true, role: true } },
             },
         });
 

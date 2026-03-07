@@ -27,6 +27,7 @@ import { useSession } from "next-auth/react";
 interface PostAuthor {
     id: string;
     name: string;
+    username?: string;
     image: string;
     role: string;
     impactXP: number;
@@ -212,10 +213,17 @@ export default function FeedCard({ post, onUpvote, onPostUpdated, className = ""
             >
                 {/* Author row */}
                 <div className="flex items-center gap-3 mb-4">
-                    <Avatar name={post.author.name || "User"} image={post.author.image} size="lg" />
+                    <Link href={`/profile/${post.author.id}`}>
+                        <Avatar name={post.author.name || "User"} image={post.author.image} size="lg" />
+                    </Link>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-text-primary text-[0.9375rem]">{post.author.name || "User"}</span>
+                            <Link href={`/profile/${post.author.id}`} className="hover:underline decoration-accent/30 underline-offset-2">
+                                <span className="font-semibold text-text-primary text-[0.9375rem]">{post.author.name || "User"}</span>
+                            </Link>
+                            {post.author.username && (
+                                <span className="text-label text-text-muted">@{post.author.username}</span>
+                            )}
                             <ImpactXPBadge score={post.author.impactXP} size="sm" showIcon={false} />
                             {post.openToCollab && (
                                 <span className="text-[9px] font-bold uppercase tracking-wider bg-green-100 text-green-700 px-1.5 py-0.5 rounded-pill">

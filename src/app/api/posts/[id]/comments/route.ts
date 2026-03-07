@@ -47,11 +47,24 @@ export async function POST(req: Request, { params }: { params: { id: string } })
             },
         });
 
-        // Award +1 XP for commenting
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { impactXP: { increment: 1 } },
-        });
+        // Award +1 XP to post author for receiving a comment
+        const post = await prisma.post.findUnique({ where: { id: params.id }, select: { authorId: true, title: true } });
+        if (post && post.authorId !== session.user.id) {
+            await prisma.user.update({
+                where: { id: post.authorId },
+                data: { impactXP: { increment: 1 } },
+            });
+            // Notify the post author
+            const commenter = await prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } });
+            await (prisma as any).notification.create({
+                data: {
+                    type: "comment",
+                    message: `${commenter?.name || "Someone"} commented on your post "${post.title?.substring(0, 30) || "Untitled"}"`,
+                    userId: post.authorId,
+                    relatedId: params.id,
+                },
+            });
+        }
 
         return NextResponse.json(comment, { status: 201 });
     } catch (error) {

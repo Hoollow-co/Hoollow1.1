@@ -11,14 +11,14 @@ import { showToast } from "@/store";
 
 interface Conversation {
     requestId: string;
-    user: { id: string; name: string; image: string; role: string };
+    user: { id: string; name: string; username?: string; image: string; role: string };
     lastMessage: { text: string; createdAt: string } | null;
 }
 
 interface MessageRequest {
     id: string;
     status: string;
-    fromUser: { id: string; name: string; image: string };
+    fromUser: { id: string; name: string; username?: string; image: string };
     createdAt: string;
 }
 
@@ -32,6 +32,7 @@ interface DM {
 interface SearchUser {
     id: string;
     name: string;
+    username?: string;
     image: string;
     role: string;
     impactXP: number;
@@ -212,7 +213,8 @@ export default function MessagesPage() {
     const filteredConversations = conversations.filter(
         (conv) =>
             !searchQuery ||
-            conv.user.name?.toLowerCase().includes(searchQuery.toLowerCase())
+            conv.user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            conv.user.username?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -324,6 +326,9 @@ export default function MessagesPage() {
                                                 <Avatar name={conv.user.name} image={conv.user.image} size="md" />
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-small font-semibold text-text-primary truncate">{conv.user.name}</p>
+                                                    {conv.user.username && (
+                                                        <p className="text-label text-text-muted truncate">@{conv.user.username}</p>
+                                                    )}
                                                     {conv.lastMessage && (
                                                         <p className="text-label text-text-muted truncate">{conv.lastMessage.text}</p>
                                                     )}
@@ -353,7 +358,7 @@ export default function MessagesPage() {
                                             <Avatar name={activeChatUser?.name || ""} image={activeChatUser?.image} size="sm" />
                                             <div>
                                                 <p className="text-small font-semibold text-text-primary">{activeChatUser?.name}</p>
-                                                <p className="text-label text-text-muted capitalize">{activeChatUser?.role}</p>
+                                                <p className="text-label text-text-muted">{activeChatUser?.username ? `@${activeChatUser.username}` : activeChatUser?.role}</p>
                                             </div>
                                         </div>
 
@@ -453,7 +458,7 @@ export default function MessagesPage() {
                                     type="text"
                                     value={userSearchQuery}
                                     onChange={(e) => handleSearchUsers(e.target.value)}
-                                    placeholder="Search by name..."
+                                    placeholder="Search by name or @username..."
                                     className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-input text-small text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors"
                                     autoFocus
                                 />
@@ -472,7 +477,7 @@ export default function MessagesPage() {
                                         <Avatar name={u.name} image={u.image} size="sm" />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-small font-medium text-text-primary truncate">{u.name}</p>
-                                            <p className="text-label text-text-muted capitalize">{u.role} · {u.impactXP} XP</p>
+                                            <p className="text-label text-text-muted truncate">{u.username ? `@${u.username}` : u.role} · {u.impactXP} XP</p>
                                         </div>
                                         <span className="text-label text-accent font-semibold flex-shrink-0">Send Request</span>
                                     </button>

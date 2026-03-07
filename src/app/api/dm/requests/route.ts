@@ -17,7 +17,7 @@ export async function GET() {
                 status: "pending",
             },
             include: {
-                fromUser: { select: { id: true, name: true, image: true, role: true, impactXP: true } },
+                fromUser: { select: { id: true, name: true, username: true, image: true, role: true, impactXP: true } },
             },
             orderBy: { createdAt: "desc" },
         });

@@ -78,6 +78,7 @@ export default function FeedPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newPost, setNewPost] = useState({ title: "", body: "", tags: "", imageUrl: "", openToCollab: false });
     const [creating, setCreating] = useState(false);
+    const [postErrors, setPostErrors] = useState<Record<string, string>>({});
 
     const userName = session?.user?.name || "User";
     const userXP = session?.user?.impactXP || 50;
@@ -114,7 +115,14 @@ export default function FeedPage() {
     }, [fetchPosts, fetchLeaderboard]);
 
     const handleCreatePost = async () => {
-        if (!newPost.title || !newPost.body) return;
+        const errors: Record<string, string> = {};
+        if (!newPost.title.trim()) errors.title = "Title is required";
+        if (!newPost.body.trim()) errors.body = "Body is required";
+        if (Object.keys(errors).length > 0) {
+            setPostErrors(errors);
+            return;
+        }
+        setPostErrors({});
         setCreating(true);
         try {
             const res = await fetch("/api/posts", {
@@ -131,7 +139,7 @@ export default function FeedPage() {
             if (res.ok) {
                 setNewPost({ title: "", body: "", tags: "", imageUrl: "", openToCollab: false });
                 setShowCreateModal(false);
-                showToast("success", "Post published! +5 XP");
+                showToast("success", "Post published!");
                 fetchPosts();
             } else {
                 const data = await res.json();
@@ -387,20 +395,22 @@ export default function FeedPage() {
                                     <input
                                         type="text"
                                         value={newPost.title}
-                                        onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                                        onChange={(e) => { setNewPost({ ...newPost, title: e.target.value }); setPostErrors((prev) => ({ ...prev, title: "" })); }}
                                         placeholder="What did you build or learn?"
-                                        className="w-full px-4 py-3 bg-surface border border-border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all"
+                                        className={`w-full px-4 py-3 bg-surface border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all ${postErrors.title ? "border-red-400" : "border-border"}`}
                                     />
+                                    {postErrors.title && <p className="text-label text-red-500 mt-1">{postErrors.title}</p>}
                                 </div>
                                 <div>
                                     <label className="text-small font-medium text-text-primary block mb-1.5">Body</label>
                                     <textarea
                                         value={newPost.body}
-                                        onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
+                                        onChange={(e) => { setNewPost({ ...newPost, body: e.target.value }); setPostErrors((prev) => ({ ...prev, body: "" })); }}
                                         placeholder="Share details about your project, learning, or thoughts..."
                                         rows={5}
-                                        className="w-full px-4 py-3 bg-surface border border-border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all resize-none"
+                                        className={`w-full px-4 py-3 bg-surface border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all resize-none ${postErrors.body ? "border-red-400" : "border-border"}`}
                                     />
+                                    {postErrors.body && <p className="text-label text-red-500 mt-1">{postErrors.body}</p>}
                                 </div>
                                 <div>
                                     <label className="text-small font-medium text-text-primary block mb-1.5">

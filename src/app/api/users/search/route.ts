@@ -22,11 +22,12 @@ export async function GET(req: Request) {
                         OR: [
                             { name: { contains: q } },
                             { email: { contains: q } },
+                            { username: { contains: q } },
                         ],
                     },
                 ],
             },
-            select: { id: true, name: true, image: true, role: true, impactXP: true },
+            select: { id: true, name: true, username: true, image: true, role: true, impactXP: true },
             take: 10,
         });
 

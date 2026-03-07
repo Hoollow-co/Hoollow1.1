@@ -51,11 +51,6 @@ export async function POST(req: Request) {
             },
         });
 
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { impactXP: { increment: 10 } },
-        });
-
         return NextResponse.json(project, { status: 201 });
     } catch (error) {
         console.error("Project creation error:", error);

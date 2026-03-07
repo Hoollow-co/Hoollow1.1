@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ArrowRight,
@@ -13,6 +13,8 @@ import {
     X,
     Check,
     Sparkles,
+    AlertCircle,
+    Loader2,
 } from "lucide-react";
 import Button from "@/components/Button";
 import XPProgressBar from "@/components/XPProgressBar";
@@ -102,6 +104,11 @@ export default function OnboardingPage() {
     const [xpAnimated, setXpAnimated] = useState(0);
     const [checking, setChecking] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [username, setUsername] = useState("");
+    const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+    const [usernameError, setUsernameError] = useState("");
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const usernameTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // ─── If already logged in with a completed profile, redirect to feed ───
     useEffect(() => {
@@ -112,7 +119,7 @@ export default function OnboardingPage() {
             fetch("/api/profile")
                 .then((res) => res.json())
                 .then((data) => {
-                    if (data?.user?.bio || (data?.user?.skills && JSON.stringify(data.user.skills) !== "[]")) {
+                    if (data?.user?.username || data?.user?.bio || (data?.user?.skills && JSON.stringify(data.user.skills) !== "[]")) {
                         // User already has a profile, redirect to feed
                         router.replace("/feed");
                     } else {
@@ -134,32 +141,86 @@ export default function OnboardingPage() {
     }, [status, session, router]);
 
     const goNext = async () => {
+        // Validate current step before proceeding
+        const errors: Record<string, string> = {};
+
+        if (step === 2) {
+            if (!selectedRole) {
+                errors.role = "Please select a role to continue";
+            }
+            if (Object.keys(errors).length > 0) {
+                setFormErrors(errors);
+                return;
+            }
+            setFormErrors({});
+            setDirection(1);
+            setStep((s) => s + 1);
+            return;
+        }
+
         if (step === 3) {
+            if (!displayName.trim()) {
+                errors.displayName = "Display name is required";
+            }
+            if (!username.trim()) {
+                errors.username = "Username is required";
+            } else if (username.length < 3) {
+                errors.username = "Username must be at least 3 characters";
+            } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                errors.username = "Only letters, numbers, and underscores allowed";
+            } else if (usernameStatus === "taken") {
+                errors.username = "Username is already taken";
+            } else if (usernameStatus === "checking") {
+                errors.username = "Still checking availability...";
+            }
+            if (!bio.trim()) {
+                errors.bio = "A short bio is required";
+            }
+
+            if (Object.keys(errors).length > 0) {
+                setFormErrors(errors);
+                return;
+            }
+
+            setFormErrors({});
             setSubmitting(true);
             try {
-                await fetch("/api/profile", {
+                const res = await fetch("/api/profile", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         role: selectedRole,
                         displayName,
+                        username: username.toLowerCase(),
                         bio,
                         skills: selectedSkills,
                         projects,
                     }),
                 });
+                if (!res.ok) {
+                    const data = await res.json();
+                    if (data.errors) {
+                        setFormErrors(data.errors);
+                        return;
+                    }
+                    setFormErrors({ submit: data.error || "Failed to save profile" });
+                    return;
+                }
                 await update({
                     role: selectedRole,
                     name: displayName,
                 });
             } catch (err) {
                 console.error("Failed to save profile:", err);
+                setFormErrors({ submit: "Network error — please try again" });
+                return;
             } finally {
                 setSubmitting(false);
             }
             setDirection(1);
             setStep((s) => s + 1);
         } else if (step < 4) {
+            setFormErrors({});
             setDirection(1);
             setStep((s) => s + 1);
         }
@@ -215,11 +276,51 @@ export default function OnboardingPage() {
         }
     }, [step]);
 
+    const checkUsername = useCallback(async (value: string) => {
+        if (value.length < 3) {
+            setUsernameStatus("invalid");
+            setUsernameError("Username must be at least 3 characters");
+            return;
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+            setUsernameStatus("invalid");
+            setUsernameError("Only letters, numbers, and underscores");
+            return;
+        }
+        setUsernameStatus("checking");
+        try {
+            const res = await fetch(`/api/username/check?username=${encodeURIComponent(value)}`);
+            const data = await res.json();
+            if (data.available) {
+                setUsernameStatus("available");
+                setUsernameError("");
+            } else {
+                setUsernameStatus("taken");
+                setUsernameError(data.error || "Username is taken");
+            }
+        } catch {
+            setUsernameStatus("idle");
+        }
+    }, []);
+
+    const handleUsernameChange = (value: string) => {
+        const clean = value.toLowerCase().replace(/[^a-z0-9_]/g, "");
+        setUsername(clean);
+        setFormErrors((prev) => ({ ...prev, username: "" }));
+        if (usernameTimerRef.current) clearTimeout(usernameTimerRef.current);
+        if (clean.length === 0) {
+            setUsernameStatus("idle");
+            setUsernameError("");
+            return;
+        }
+        usernameTimerRef.current = setTimeout(() => checkUsername(clean), 400);
+    };
+
     const canProceed = () => {
         switch (step) {
             case 1: return true;
             case 2: return selectedRole !== "";
-            case 3: return displayName.length > 0;
+            case 3: return displayName.length > 0 && username.length >= 3 && usernameStatus !== "taken" && usernameStatus !== "checking";
             case 4: return true;
             default: return false;
         }
@@ -417,6 +518,11 @@ export default function OnboardingPage() {
                                         </motion.button>
                                     ))}
                                 </div>
+                                {formErrors.role && (
+                                    <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1.5 text-small text-red-500 mt-3 justify-center">
+                                        <AlertCircle size={14} /> {formErrors.role}
+                                    </motion.p>
+                                )}
                             </motion.div>
                         )}
 
@@ -440,10 +546,46 @@ export default function OnboardingPage() {
                                         <input
                                             type="text"
                                             value={displayName}
-                                            onChange={(e) => setDisplayName(e.target.value)}
+                                            onChange={(e) => { setDisplayName(e.target.value); setFormErrors((prev) => ({ ...prev, displayName: "" })); }}
                                             placeholder="Your name"
-                                            className="w-full px-4 py-3 bg-surface border border-border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all"
+                                            className={`w-full px-4 py-3 bg-surface border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all ${formErrors.displayName ? "border-red-400" : "border-border"}`}
                                         />
+                                        {formErrors.displayName && (
+                                            <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 text-label text-red-500 mt-1.5">
+                                                <AlertCircle size={12} /> {formErrors.displayName}
+                                            </motion.p>
+                                        )}
+                                    </motion.div>
+
+                                    <motion.div variants={fadeInUp} custom={2.5}>
+                                        <label className="text-small font-medium text-text-primary block mb-2">Username</label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-body">@</span>
+                                            <input
+                                                type="text"
+                                                value={username}
+                                                onChange={(e) => handleUsernameChange(e.target.value)}
+                                                placeholder="your_username"
+                                                maxLength={20}
+                                                className={`w-full pl-9 pr-10 py-3 bg-surface border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all ${formErrors.username ? "border-red-400" : usernameStatus === "available" ? "border-green-400" : "border-border"}`}
+                                            />
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                {usernameStatus === "checking" && <Loader2 size={16} className="text-text-muted animate-spin" />}
+                                                {usernameStatus === "available" && <Check size={16} className="text-green-500" />}
+                                                {(usernameStatus === "taken" || usernameStatus === "invalid") && <AlertCircle size={16} className="text-red-500" />}
+                                            </div>
+                                        </div>
+                                        {(usernameError || formErrors.username) && (
+                                            <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className={`flex items-center gap-1 text-label mt-1.5 ${usernameStatus === "available" ? "text-green-600" : "text-red-500"}`}>
+                                                {usernameStatus === "available" ? <Check size={12} /> : <AlertCircle size={12} />}
+                                                {formErrors.username || usernameError}
+                                            </motion.p>
+                                        )}
+                                        {usernameStatus === "available" && !formErrors.username && (
+                                            <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 text-label text-green-600 mt-1.5">
+                                                <Check size={12} /> Username is available!
+                                            </motion.p>
+                                        )}
                                     </motion.div>
 
                                     <motion.div variants={fadeInUp} custom={3}>
@@ -452,11 +594,16 @@ export default function OnboardingPage() {
                                         </label>
                                         <textarea
                                             value={bio}
-                                            onChange={(e) => setBio(e.target.value.slice(0, 140))}
+                                            onChange={(e) => { setBio(e.target.value.slice(0, 140)); setFormErrors((prev) => ({ ...prev, bio: "" })); }}
                                             placeholder="What drives you? What are you building?"
                                             rows={3}
-                                            className="w-full px-4 py-3 bg-surface border border-border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all resize-none"
+                                            className={`w-full px-4 py-3 bg-surface border rounded-input text-body text-text-primary placeholder-text-muted focus:outline-none focus:border-accent focus:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] transition-all resize-none ${formErrors.bio ? "border-red-400" : "border-border"}`}
                                         />
+                                        {formErrors.bio && (
+                                            <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-1 text-label text-red-500 mt-1.5">
+                                                <AlertCircle size={12} /> {formErrors.bio}
+                                            </motion.p>
+                                        )}
                                     </motion.div>
 
                                     <motion.div variants={fadeInUp} custom={4}>
@@ -595,6 +742,17 @@ export default function OnboardingPage() {
 
             {/* Navigation Buttons */}
             <AnimatePresence>
+                {formErrors.submit && step !== 4 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-btn px-4 py-2.5 mt-4 relative z-10"
+                    >
+                        <AlertCircle size={16} className="text-red-500 flex-shrink-0" />
+                        <p className="text-small text-red-600">{formErrors.submit}</p>
+                    </motion.div>
+                )}
                 {step !== 4 && step > 1 && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

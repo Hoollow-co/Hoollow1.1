@@ -12,10 +12,39 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { role, displayName, bio, skills, openToCollab } = body;
+        const { role, displayName, username, bio, skills, openToCollab } = body;
+
+        // Validate required fields
+        const errors: Record<string, string> = {};
+        if (!displayName || displayName.trim().length === 0) {
+            errors.displayName = "Display name is required";
+        }
+        if (!username || username.trim().length < 3) {
+            errors.username = "Username must be at least 3 characters";
+        } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            errors.username = "Only letters, numbers, and underscores allowed";
+        } else if (username.length > 20) {
+            errors.username = "Username must be 20 characters or less";
+        } else {
+            // Check uniqueness (case-insensitive), excluding current user
+            const existing = await prisma.user.findFirst({
+                where: {
+                    username: { equals: username, mode: "insensitive" },
+                    NOT: { email: session.user.email },
+                },
+            });
+            if (existing) {
+                errors.username = "Username is already taken";
+            }
+        }
+
+        if (Object.keys(errors).length > 0) {
+            return NextResponse.json({ errors }, { status: 400 });
+        }
 
         const updateData: any = {
             name: displayName,
+            username: username.toLowerCase(),
             role: role,
             bio: bio,
             skills: skills,
