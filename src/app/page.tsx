@@ -76,10 +76,13 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 lg:gap-16 items-center">
               {/* Left */}
               <motion.div className="lg:col-span-3" variants={fadeInUp}>
-                <h1 className="font-display text-hero text-text-primary mb-6">
-                  Build. Prove.
-                  <br />
-                  Get Seen.
+                <h1 className="font-display text-hero mb-6 leading-[0.9] tracking-tight uppercase">
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-zinc-400">
+                    From Ideas
+                  </span>
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-b from-[#f9a8ff] via-[#e879f9] to-[#a855f7]">
+                    To Execution
+                  </span>
                 </h1>
                 <p className="text-lg text-text-secondary max-w-lg mb-8 leading-relaxed">
                   Hoollow is the proof-of-work ecosystem for student builders and young

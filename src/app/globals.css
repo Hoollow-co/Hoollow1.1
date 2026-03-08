@@ -99,7 +99,8 @@ input, textarea, select {
 
 /* Font display classes */
 .font-display {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-display), system-ui, sans-serif;
+  letter-spacing: 0.04em;
 }
 
 .font-ui {

@@ -68,7 +68,7 @@ export default function Navbar() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className={`sticky top-0 z-50 h-[60px] border-b border-border bg-surface/90 backdrop-blur-md transition-shadow duration-300 ${scrolled ? "shadow-sm" : ""}`}
+            className={`sticky top-0 z-50 h-[60px] border-b border-white/15 bg-white/5 backdrop-blur-2xl backdrop-saturate-150 transition-shadow duration-300 ${scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.85)]" : "shadow-[0_18px_45px_rgba(0,0,0,0.6)]"}`}
         >
             <div className="max-w-content mx-auto h-full px-6 flex items-center justify-between">
                 {/* Logo */}
@@ -220,7 +220,7 @@ export default function Navbar() {
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="md:hidden absolute top-[60px] left-0 right-0 bg-surface border-b border-border shadow-card-hover z-50 overflow-hidden"
+                        className="md:hidden absolute top-[60px] left-0 right-0 bg-white/5 backdrop-blur-2xl border-b border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.85)] z-50 overflow-hidden"
                     >
                         <div className="px-6 py-4 flex flex-col gap-3">
                             {navLinks.map((link, i) => (

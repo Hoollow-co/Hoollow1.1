@@ -340,7 +340,7 @@ export default function MessagesPage() {
                             </div>
 
                             {/* Chat Area */}
-                            <div className={`flex-1 flex flex-col ${!activeChat ? "hidden md:flex" : "flex"}`}>
+                            <div className={`flex-1 flex flex-col ${!activeChat ? "hidden md:flex" : "flex"} bg-black`}>
                                 {!activeChat ? (
                                     <div className="flex-1 flex items-center justify-center">
                                         <div className="text-center">
@@ -351,7 +351,7 @@ export default function MessagesPage() {
                                 ) : (
                                     <>
                                         {/* Chat Header */}
-                                        <div className="flex items-center gap-3 p-4 border-b border-border">
+                                        <div className="flex items-center gap-3 p-4 border-b border-border bg-black/80">
                                             <button onClick={() => setActiveChat(null)} className="md:hidden p-1.5 rounded-btn hover:bg-surface-alt transition-colors">
                                                 <ArrowLeft size={18} />
                                             </button>
@@ -363,7 +363,7 @@ export default function MessagesPage() {
                                         </div>
 
                                         {/* Messages */}
-                                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-black">
                                             {messages.length === 0 ? (
                                                 <div className="flex items-center justify-center h-full">
                                                     <p className="text-text-muted text-small">Send the first message!</p>
@@ -395,7 +395,7 @@ export default function MessagesPage() {
                                         </div>
 
                                         {/* Input */}
-                                        <div className="p-3 border-t border-border">
+                                        <div className="p-3 border-t border-border bg-black/80">
                                             <div className="flex gap-2">
                                                 <input
                                                     type="text"
