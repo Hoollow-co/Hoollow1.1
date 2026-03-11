@@ -68,14 +68,14 @@ export default function Navbar() {
             initial={{ y: -60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className={`sticky top-0 z-50 h-[60px] border-b border-white/15 bg-white/5 backdrop-blur-2xl backdrop-saturate-150 transition-shadow duration-300 ${scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.85)]" : "shadow-[0_18px_45px_rgba(0,0,0,0.6)]"}`}
+            className={`sticky top-0 z-50 h-[60px] border-b border-black bg-black transition-shadow duration-300 ${scrolled ? "shadow-[0_18px_45px_rgba(0,0,0,0.85)]" : "shadow-[0_18px_45px_rgba(0,0,0,0.6)]"}`}
         >
             <div className="max-w-content mx-auto h-full px-6 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-1.5 flex-shrink-0 group">
                     <motion.span
                         whileHover={{ scale: 1.05 }}
-                        className="font-display text-xl font-semibold text-text-primary"
+                        className="font-display text-xl font-semibold text-white"
                     >
                         Hoollow
                     </motion.span>
@@ -88,8 +88,8 @@ export default function Navbar() {
                             key={link.href}
                             href={link.href}
                             className={`text-button font-medium transition-colors duration-200 relative py-[18px] ${pathname === link.href
-                                ? "text-text-primary"
-                                : "text-text-secondary hover:text-text-primary"
+                                ? "text-white"
+                                : "text-zinc-400 hover:text-white"
                                 }`}
                         >
                             <span className="flex items-center gap-1.5">
@@ -120,10 +120,10 @@ export default function Navbar() {
                     {status === "authenticated" && session?.user ? (
                         <>
                             <div className="flex items-center gap-1 mr-2">
-                                <Link href="/messages" className="p-2 text-text-secondary hover:text-text-primary rounded-full hover:bg-surface-alt transition-colors relative">
+                                <Link href="/messages" className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-surface-alt transition-colors relative">
                                     <MessageCircle size={20} />
                                 </Link>
-                                <Link href="/notifications" className="p-2 text-text-secondary hover:text-text-primary rounded-full hover:bg-surface-alt transition-colors relative">
+                                <Link href="/notifications" className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-surface-alt transition-colors relative">
                                     <Bell size={20} />
                                     {unreadNotifications > 0 && (
                                         <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-surface"></span>
@@ -195,7 +195,7 @@ export default function Navbar() {
                 {/* Mobile menu button */}
                 <motion.button
                     whileTap={{ scale: 0.9 }}
-                    className="md:hidden p-2 text-text-primary"
+                    className="md:hidden p-2 text-white"
                     onClick={() => setMobileOpen(!mobileOpen)}
                 >
                     <AnimatePresence mode="wait">
@@ -220,7 +220,7 @@ export default function Navbar() {
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="md:hidden absolute top-[60px] left-0 right-0 bg-white/5 backdrop-blur-2xl border-b border-white/10 shadow-[0_18px_45px_rgba(0,0,0,0.85)] z-50 overflow-hidden"
+                        className="md:hidden absolute top-[60px] left-0 right-0 bg-black border-b border-black shadow-[0_18px_45px_rgba(0,0,0,0.85)] z-50 overflow-hidden"
                     >
                         <div className="px-6 py-4 flex flex-col gap-3">
                             {navLinks.map((link, i) => (
@@ -232,7 +232,7 @@ export default function Navbar() {
                                 >
                                     <Link
                                         href={link.href}
-                                        className={`text-button font-medium py-2 block ${pathname === link.href ? "text-text-primary" : "text-text-secondary"}`}
+                                        className={`text-button font-medium py-2 block ${pathname === link.href ? "text-white" : "text-zinc-300"}`}
                                         onClick={() => setMobileOpen(false)}
                                     >
                                         <span className="flex items-center gap-2">
@@ -253,7 +253,7 @@ export default function Navbar() {
                                         </Link>
                                         <button
                                             onClick={() => signOut({ callbackUrl: "/" })}
-                                            className="ml-auto text-small text-text-muted hover:text-text-primary flex items-center gap-1"
+                                            className="ml-auto text-small text-zinc-400 hover:text-white flex items-center gap-1"
                                         >
                                             <LogOut size={14} />
                                         </button>

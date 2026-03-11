@@ -91,8 +91,8 @@ function AnimatedStat({ value, label }: { value: number; label: string }) {
 
     return (
         <div className="text-center">
-            <p className="text-xl font-bold text-bg tabular-nums">{display}</p>
-            <p className="text-label text-bg/40">{label}</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-bg tabular-nums">{display}</p>
+            <p className="text-label text-slate-500 dark:text-bg/40">{label}</p>
         </div>
     );
 }
@@ -319,20 +319,20 @@ export default function ProfilePage({ params }: { params: { username: string } }
                                 transition={{ delay: 0.2 }}
                                 className="flex-1"
                             >
-                                <h1 className="font-display text-[2rem] font-bold text-bg mb-2">
+                                <h1 className="font-display text-[2rem] font-bold text-slate-900 dark:text-bg mb-2">
                                     {displayUser.name || "User"}
                                 </h1>
                                 <div className="flex flex-wrap items-center gap-3 mb-4">
                                     <RoleBadge role={displayUser.role} />
                                     <ImpactXPBadge score={displayUser.impactXP} size="md" />
                                     {memberSince && (
-                                        <span className="text-label text-bg/40 flex items-center gap-1">
+                                        <span className="text-label text-slate-500 dark:text-bg/40 flex items-center gap-1">
                                             <Calendar size={12} /> {memberSince}
                                         </span>
                                     )}
                                 </div>
                                 {displayUser.bio && (
-                                    <p className="text-bg/70 text-body mb-4 max-w-lg">{displayUser.bio}</p>
+                                    <p className="text-slate-700 dark:text-bg/70 text-body mb-4 max-w-lg">{displayUser.bio}</p>
                                 )}
                                 <Sparkline data={xpHistory} />
                                 <div className="flex flex-wrap gap-6 mt-6">
@@ -379,7 +379,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                     onClick={handleShare}
-                                    className="w-10 h-10 rounded-btn border border-white/20 flex items-center justify-center text-bg/60 hover:text-bg hover:border-white/40 transition-colors"
+                                    className="w-10 h-10 rounded-btn border border-white/20 flex items-center justify-center text-slate-600 hover:text-slate-900 dark:text-bg/60 dark:hover:text-bg hover:border-white/40 transition-colors"
                                 >
                                     <Share2 size={16} />
                                 </motion.button>
